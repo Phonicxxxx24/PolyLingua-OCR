@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: polylingua-ocr
+    env: docker
+    plan: free
+    autoDeploy: true
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: TESSERACT_CMD
+        value: /usr/bin/tesseract
+      - key: POPPLER_PATH
+        value: ""

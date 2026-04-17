@@ -89,6 +89,16 @@ templates/
 - Tesseract OCR installed on Windows
 - Poppler for Windows installed for PDF support
 
+### Windows local installs
+
+Install the following once on your machine:
+
+1. Python 3.11 or newer
+2. Tesseract OCR (with language packs for ara, chi_sim, jpn, kor, hin, rus)
+3. Poppler for Windows (for PDF input)
+
+Then confirm your paths in [config.py](config.py).
+
 ## Configuration
 
 Edit config.py:
@@ -120,6 +130,49 @@ python app.py
 Open:
 
 - http://127.0.0.1:5000
+
+## Easiest Hosting (Render + Docker)
+
+This repository now includes:
+
+- [Dockerfile](Dockerfile)
+- [render.yaml](render.yaml)
+- [.dockerignore](.dockerignore)
+
+Render will build and run the app with Tesseract and Poppler already installed.
+
+### What you need to do
+
+1. Push latest code to your GitHub repo.
+2. Go to Render dashboard and click New -> Blueprint.
+3. Connect your GitHub repository.
+4. Select the repository root containing [render.yaml](render.yaml).
+5. Click Apply.
+6. Wait for build and deploy to complete.
+7. Open the generated Render URL.
+
+### Environment variables on Render
+
+These are already defined in [render.yaml](render.yaml):
+
+- TESSERACT_CMD=/usr/bin/tesseract
+- POPPLER_PATH=""
+
+No extra system package installation is needed on Render.
+
+### Notes for free plan
+
+- First response can be slow after inactivity.
+- OCR and PDF processing are CPU heavy, so larger files may take longer.
+
+## Optional quick demo without deployment
+
+If you only need a temporary public link:
+
+1. Run the app locally.
+2. Use Cloudflare Tunnel or ngrok to expose port 5000.
+
+This is fast for demos but not a permanent host.
 
 ## API Endpoints
 
