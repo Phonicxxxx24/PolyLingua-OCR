@@ -5,9 +5,12 @@ app.py — PolyLingua OCR Flask Application
 import os
 import uuid
 import json
+import asyncio
+import inspect
 from flask import Flask, request, jsonify, send_file, render_template
 from werkzeug.utils import secure_filename
 from pdf2image import convert_from_path
+from googletrans import Translator
 
 import config
 from modules.ocr_engine       import run_ocr
@@ -20,6 +23,8 @@ from modules.pdf_exporter      import export_pdf
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = config.MAX_CONTENT_LENGTH
 app.config["UPLOAD_FOLDER"]      = config.UPLOAD_FOLDER
+
+SUPPORTED_BACK_TRANSLATE_LANGS = {"ar", "zh-cn", "ja", "ko", "hi", "ru"}
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
@@ -90,6 +95,10 @@ def upload():
     # Translation
     paragraphs = translate_paragraphs(paragraphs)
 
+    # Ensure confidence is always present in API/JSON output.
+    for para in paragraphs:
+        para.setdefault("conf", None)
+
     # Annotate image with bounding boxes
     annotated_filename = f"{job_id}_annotated.jpg"
     annotated_path     = os.path.join(config.UPLOAD_FOLDER, annotated_filename)
@@ -142,6 +151,31 @@ def download_pdf(job_id: str):
         return jsonify({"error": "Not found"}), 404
     return send_file(path, as_attachment=True,
                      download_name=f"polylingua_{job_id}_translated.pdf")
+
+
+@app.route("/back_translate", methods=["POST"])
+def back_translate():
+    data = request.get_json(silent=True) or {}
+    text = data.get("text", "")
+    target_lang = str(data.get("target_lang", "")).lower().strip()
+
+    if not isinstance(text, str) or not text.strip():
+        return jsonify({"error": "Invalid text"}), 400
+
+    if target_lang not in SUPPORTED_BACK_TRANSLATE_LANGS:
+        return jsonify({"error": "Unsupported target language"}), 400
+
+    try:
+        translator = Translator()
+        translated = translator.translate(text, src="en", dest=target_lang)
+        if inspect.isawaitable(translated):
+            translated = asyncio.run(translated)
+        translated_text = getattr(translated, "text", None)
+        if not translated_text:
+            raise RuntimeError("Empty translation result")
+        return jsonify({"translated_text": translated_text})
+    except Exception:
+        return jsonify({"error": "Translation failed"}), 500
 
 
 # ── Entry ─────────────────────────────────────────────────────────────────────

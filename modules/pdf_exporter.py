@@ -27,7 +27,7 @@ HEADER_BG     = colors.HexColor("#4c1d95")
 
 def export_pdf(paragraphs: list, output_path: str, source_filename: str = "") -> str:
     """
-    Build a translated PDF from the annotated paragraph list.
+    Build a clean translated-only PDF from the paragraph list.
     Returns output_path.
     """
     doc = SimpleDocTemplate(
@@ -42,99 +42,22 @@ def export_pdf(paragraphs: list, output_path: str, source_filename: str = "") ->
     styles = getSampleStyleSheet()
     story  = []
 
-    # ── Title ─────────────────────────────────────────────────────────────────
-    title_style = ParagraphStyle(
-        "CustomTitle",
-        parent=styles["Title"],
-        fontSize=24,
-        textColor=ACCENT,
-        spaceAfter=6,
-        alignment=TA_CENTER,
-    )
-    sub_style = ParagraphStyle(
-        "Subtitle",
-        parent=styles["Normal"],
-        fontSize=10,
-        textColor=colors.HexColor("#6b7280"),
-        spaceAfter=20,
-        alignment=TA_CENTER,
-    )
-
-    story.append(Paragraph("PolyLingua OCR", title_style))
-    story.append(Paragraph(f"Multilingual Extraction &amp; Translation Report", sub_style))
-    if source_filename:
-        story.append(Paragraph(f"Source: <b>{source_filename}</b>", sub_style))
-    story.append(HRFlowable(width="100%", thickness=1, color=ACCENT_LIGHT, spaceAfter=20))
-
-    # ── Summary stats ─────────────────────────────────────────────────────────
-    langs_found = list({p.get("lang", {}).get("name", "Unknown") for p in paragraphs})
-    langs_found = [l for l in langs_found if l != "Unknown"]
-
-    stat_style = ParagraphStyle(
-        "Stat",
-        parent=styles["Normal"],
-        fontSize=10,
-        textColor=colors.HexColor("#374151"),
-        spaceAfter=4,
-    )
-    story.append(Paragraph(f"<b>Total Blocks Detected:</b> {len(paragraphs)}", stat_style))
-    story.append(Paragraph(f"<b>Languages Found:</b> {', '.join(langs_found) or 'N/A'}", stat_style))
-    story.append(Spacer(1, 20))
-
-    # ── Per-paragraph cards ───────────────────────────────────────────────────
-    section_style = ParagraphStyle(
-        "Section",
-        parent=styles["Heading2"],
-        fontSize=13,
-        textColor=ACCENT,
-        spaceBefore=14,
-        spaceAfter=4,
-    )
-    label_style = ParagraphStyle(
-        "Label",
-        parent=styles["Normal"],
-        fontSize=8,
-        textColor=colors.HexColor("#9ca3af"),
-        spaceAfter=2,
-    )
-    orig_style = ParagraphStyle(
-        "Original",
-        parent=styles["Normal"],
-        fontSize=11,
-        textColor=colors.HexColor("#1f2937"),
-        spaceAfter=6,
-        backColor=colors.HexColor("#f9fafb"),
-        leftIndent=8,
-        rightIndent=8,
-        borderPad=4,
-    )
+    # ── Translated text only ──────────────────────────────────────────────────
     trans_style = ParagraphStyle(
         "Translation",
         parent=styles["Normal"],
-        fontSize=11,
-        textColor=TEXT_DARK,
-        spaceAfter=6,
-        backColor=CARD_BG,
-        leftIndent=8,
-        rightIndent=8,
-        borderPad=4,
+        fontSize=12,
+        textColor=colors.HexColor("#111827"),
+        leading=17,
+        spaceAfter=10,
     )
 
-    for idx, para in enumerate(paragraphs, 1):
-        lang_name  = para.get("lang", {}).get("name", "Unknown")
-        orig_text  = para.get("text", "")
+    for para in paragraphs:
         trans_text = para.get("translation", "")
-
-        block_elements = [
-            Paragraph(f"Block #{idx} — {lang_name}", section_style),
-            HRFlowable(width="100%", thickness=0.5, color=colors.HexColor("#e5e7eb"), spaceAfter=6),
-            Paragraph("ORIGINAL TEXT:", label_style),
-            Paragraph(_safe(orig_text), orig_style),
-            Paragraph("ENGLISH TRANSLATION:", label_style),
-            Paragraph(_safe(trans_text), trans_style),
-            Spacer(1, 8),
-        ]
-        story.append(KeepTogether(block_elements))
+        if not trans_text or not trans_text.strip():
+            continue
+        story.append(Paragraph(_safe(trans_text.strip()), trans_style))
+        story.append(Spacer(1, 4))
 
     doc.build(story)
     return output_path

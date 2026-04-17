@@ -129,6 +129,23 @@
           </div>
         </div>
       </div>
+
+      <!-- Back Translation Controls -->
+      <div class="back-translate-controls">
+        <label for="back-translate-lang" class="back-translate-label">Back-translation target</label>
+        <select id="back-translate-lang" class="back-translate-select" aria-label="Back translation target language">
+          <option value="ar">Arabic (ar)</option>
+          <option value="zh-cn">Chinese Simplified (zh-cn)</option>
+          <option value="ja">Japanese (ja)</option>
+          <option value="ko">Korean (ko)</option>
+          <option value="hi">Hindi (hi)</option>
+          <option value="ru">Russian (ru)</option>
+        </select>
+        <button id="btn-back-translate" class="btn btn-outline" type="button">
+          <span id="btn-back-translate-spinner" class="btn-spinner hidden" aria-hidden="true"></span>
+          <span id="btn-back-translate-label">Back-Translate to Selected Language</span>
+        </button>
+      </div>
     </section>
 
   </main>

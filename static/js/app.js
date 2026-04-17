@@ -22,11 +22,16 @@ const annotatedImg    = document.getElementById('annotated-img');
 const btnJson         = document.getElementById('btn-json');
 const btnPdf          = document.getElementById('btn-pdf');
 const btnReset        = document.getElementById('btn-reset');
+const backTranslateLang = document.getElementById('back-translate-lang');
+const btnBackTranslate = document.getElementById('btn-back-translate');
+const btnBackTranslateSpinner = document.getElementById('btn-back-translate-spinner');
+const btnBackTranslateLabel = document.getElementById('btn-back-translate-label');
 
 // ── State ─────────────────────────────────────────────────────────────────────
 let currentJobId   = null;
 let downloadJsonUrl = null;
 let downloadPdfUrl  = null;
+let currentParagraphs = [];
 
 // ── Progress simulation steps ─────────────────────────────────────────────────
 const STEPS = [
@@ -94,6 +99,7 @@ btnPdf.addEventListener('click', () => {
 });
 
 btnReset.addEventListener('click', resetUI);
+btnBackTranslate.addEventListener('click', handleBackTranslate);
 
 // ── Main Upload Handler ───────────────────────────────────────────────────────
 async function handleFile(file) {
@@ -178,6 +184,7 @@ function showResults(data, filename) {
   currentJobId = data.job_id;
   downloadJsonUrl = data.download_json;
   downloadPdfUrl  = data.download_pdf;
+  currentParagraphs = Array.isArray(data.paragraphs) ? data.paragraphs : [];
 
   // Meta line
   resultsMeta.textContent =
@@ -205,11 +212,91 @@ function showResults(data, filename) {
   // Blocks
   blocksCount.textContent = `${data.total_blocks} block${data.total_blocks !== 1 ? 's' : ''}`;
   blocksList.innerHTML = '';
-  data.paragraphs.forEach((para, idx) => buildBlockCard(para, idx));
+  currentParagraphs.forEach((para, idx) => buildBlockCard(para, idx));
 
   // Download buttons
   btnJson.disabled = !downloadJsonUrl;
   btnPdf.disabled  = !downloadPdfUrl;
+}
+
+async function handleBackTranslate() {
+  if (!currentParagraphs.length) {
+    showError('No extracted blocks available for back-translation.');
+    return;
+  }
+
+  const targetLangCode = backTranslateLang.value;
+  const targetLangName = readableLangName(targetLangCode, targetLangCode);
+
+  setBackTranslateLoading(true);
+  hideError();
+
+  try {
+    const translatedBlocks = await Promise.all(currentParagraphs.map(async para => {
+      const englishTranslation = String(para.translation || para.text || '').trim();
+
+      if (!englishTranslation) {
+        return {
+          ...para,
+          back_translation: {
+            lang_code: targetLangCode,
+            lang_name: targetLangName,
+            text: '[Back-translation skipped: empty text]'
+          }
+        };
+      }
+
+      try {
+        const response = await fetch('/back_translate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            text: englishTranslation,
+            target_lang: targetLangCode
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`Back-translation failed (${response.status})`);
+        }
+
+        const payload = await response.json();
+        return {
+          ...para,
+          back_translation: {
+            lang_code: targetLangCode,
+            lang_name: targetLangName,
+            text: payload.translated_text || '[Back-translation failed]'
+          }
+        };
+      } catch {
+        return {
+          ...para,
+          back_translation: {
+            lang_code: targetLangCode,
+            lang_name: targetLangName,
+            text: '[Back-translation failed]'
+          }
+        };
+      }
+    }));
+
+    currentParagraphs = translatedBlocks;
+    blocksList.innerHTML = '';
+    currentParagraphs.forEach((para, idx) => buildBlockCard(para, idx));
+  } catch {
+    showError('Back-translation failed. Please try again.');
+  } finally {
+    setBackTranslateLoading(false);
+  }
+}
+
+function setBackTranslateLoading(isLoading) {
+  btnBackTranslate.disabled = isLoading;
+  btnBackTranslateSpinner.classList.toggle('hidden', !isLoading);
+  btnBackTranslateLabel.textContent = isLoading
+    ? 'Back-Translating...'
+    : 'Back-Translate to Selected Language';
 }
 
 function buildBlockCard(para, idx) {
@@ -221,24 +308,27 @@ function buildBlockCard(para, idx) {
   const langName  = readableLangName(para.lang?.code, para.lang?.name || 'Unknown');
   const origText  = para.text        || '';
   const transText = para.translation || origText;
+  const backTranslation = para.back_translation;
 
   card.innerHTML = `
     <div class="block-header">
       <span class="block-num">#${idx + 1}</span>
       <span class="block-lang-badge" style="--c:${langColor}">${langName}</span>
-      <span class="block-conf">conf: ${avgConf(para)}%</span>
+      <span class="block-conf">Confidence: ${formatConf(para.conf)}</span>
     </div>
     <div class="block-label">Original Text</div>
     <div class="block-text" lang="und">${escHtml(origText)}</div>
     <div class="block-label">English Translation</div>
     <div class="block-translation">${escHtml(transText)}</div>
+    ${backTranslation ? `<div class="block-back-translation">Back-translated (${escHtml(backTranslation.lang_name)}): ${escHtml(backTranslation.text || '')}</div>` : ''}
   `;
 
   blocksList.appendChild(card);
 }
 
-function avgConf(para) {
-  return para.conf ?? '—';
+function formatConf(conf) {
+  if (typeof conf !== 'number' || Number.isNaN(conf)) return '—';
+  return `${Math.round(conf)}%`;
 }
 
 // ── Error ─────────────────────────────────────────────────────────────────────
@@ -263,6 +353,8 @@ function resetUI() {
   currentJobId = null;
   downloadJsonUrl = null;
   downloadPdfUrl = null;
+  currentParagraphs = [];
+  setBackTranslateLoading(false);
 }
 
 // ── Utility ───────────────────────────────────────────────────────────────────
