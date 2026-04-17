@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PolyLingua OCR — Multilingual Text Extractor & Translator</title>
+  <meta name="description" content="Upload an image or PDF to extract, detect, and translate text in Arabic, Chinese, Japanese, Korean, Devanagari, Cyrillic and more using AI-powered OCR." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/styles.css" />
+</head>
+<body>
+  <!-- ── HEADER ──────────────────────────────────────────────────────────── -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="logo">
+        <span class="logo-icon">🌐</span>
+        <div>
+          <span class="logo-name">PolyLingua <span class="logo-accent">OCR</span></span>
+          <span class="logo-tagline">Multilingual Text Intelligence</span>
+        </div>
+      </div>
+      <nav class="header-badges">
+        <span class="lang-badge" style="--c:#f59e0b">عربي</span>
+        <span class="lang-badge" style="--c:#ef4444">中文</span>
+        <span class="lang-badge" style="--c:#a855f7">日本語</span>
+        <span class="lang-badge" style="--c:#3b82f6">한국어</span>
+        <span class="lang-badge" style="--c:#10b981">हिन्दी</span>
+        <span class="lang-badge" style="--c:#06b6d4">Русский</span>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ── HERO ────────────────────────────────────────────────────────────── -->
+  <section class="hero">
+    <div class="hero-glow left"></div>
+    <div class="hero-glow right"></div>
+    <h1>Extract. Detect. <span class="gradient-text">Translate.</span></h1>
+    <p class="hero-sub">
+      Upload any image or PDF containing foreign-language text.
+      PolyLingua OCR identifies every language, translates it to English,
+      and gives you structured JSON and a translated PDF — instantly.
+    </p>
+  </section>
+
+  <!-- ── MAIN ────────────────────────────────────────────────────────────── -->
+  <main class="main">
+
+    <!-- Upload Zone -->
+    <section id="upload-section" class="upload-section">
+      <div id="drop-zone" class="drop-zone" role="button" tabindex="0"
+           aria-label="Upload file drop zone">
+        <div class="drop-icon">📄</div>
+        <p class="drop-title">Drag &amp; drop your file here</p>
+        <p class="drop-sub">Supports PNG, JPG, WEBP, BMP, TIFF, PDF</p>
+        <label class="btn-upload" for="file-input" id="btn-upload-label">
+          Choose File
+        </label>
+        <input type="file" id="file-input" accept=".png,.jpg,.jpeg,.webp,.bmp,.tif,.tiff,.pdf" hidden />
+        <p class="drop-limit">Max 16 MB</p>
+      </div>
+    </section>
+
+    <!-- Progress -->
+    <div id="progress-section" class="progress-section hidden">
+      <div class="progress-card">
+        <div class="spinner"></div>
+        <div class="progress-info">
+          <p class="progress-title">Processing your document…</p>
+          <p id="progress-step" class="progress-step">Running OCR engine</p>
+        </div>
+      </div>
+      <div class="progress-bar-outer">
+        <div id="progress-bar" class="progress-bar-inner"></div>
+      </div>
+    </div>
+
+    <!-- Error Banner -->
+    <div id="error-banner" class="error-banner hidden">
+      <span class="error-icon">⚠️</span>
+      <span id="error-msg"></span>
+    </div>
+
+    <!-- Results -->
+    <section id="results-section" class="results-section hidden">
+      <div class="results-header">
+        <div>
+          <h2 class="results-title">Analysis Complete</h2>
+          <p id="results-meta" class="results-meta"></p>
+        </div>
+        <div class="results-actions">
+          <button id="btn-json" class="btn btn-outline">
+            <span>⬇</span> Download JSON
+          </button>
+          <button id="btn-pdf" class="btn btn-primary">
+            <span>📄</span> Download PDF
+          </button>
+          <button id="btn-reset" class="btn btn-ghost">
+            <span>↺</span> New File
+          </button>
+        </div>
+      </div>
+
+      <!-- Language chips summary -->
+      <div id="lang-summary" class="lang-summary"></div>
+
+      <!-- Split View -->
+      <div class="split-view">
+        <!-- Annotated Image -->
+        <div class="image-panel">
+          <div class="panel-header">
+            <span class="panel-title">🖼 Annotated Image</span>
+            <span class="panel-hint">Color-coded by language</span>
+          </div>
+          <div class="image-wrapper">
+            <img id="annotated-img" src="" alt="Annotated document" />
+          </div>
+        </div>
+
+        <!-- Results List -->
+        <div class="results-panel">
+          <div class="panel-header">
+            <span class="panel-title">📝 Extracted Blocks</span>
+            <span id="blocks-count" class="panel-hint"></span>
+          </div>
+          <div id="blocks-list" class="blocks-list">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ── FOOTER ──────────────────────────────────────────────────────────── -->
+  <footer class="footer">
+    <p>Built for <strong>Hackathon 2026</strong> · PolyLingua OCR by Team Fusion Fest</p>
+    <p class="footer-stack">Flask · Tesseract · googletrans · ReportLab · Pillow</p>
+  </footer>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
